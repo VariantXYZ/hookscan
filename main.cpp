@@ -98,23 +98,6 @@ void Monitor()
 	return;
 }
 
-void AddrMonitor()
-{
-	int* mon;
-	printf("Type in specific address (in hex) to monitor: ");
-	scanf("%x",&mon);
-	
-	char option;
-	do
-	{
-		printf("\n%p:%p",mon,*mon);
-		printf("Again (y or n)? ");
-		scanf("%c",&option);
-		printf("\n");
-	} while(option != 'n');
-	
-	return;
-}
 
 void Modify()
 {
@@ -144,7 +127,6 @@ DWORD WINAPI initialize(LPVOID param)
 		{
 			case 's': Search(); break;
 			case 'm': Monitor(); break;
-			case 'h': AddrMonitor(); break;
 			case 'c': Modify(); break;
 			default: break;
 		}
