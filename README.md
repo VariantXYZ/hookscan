@@ -3,7 +3,8 @@ A simple DLL that provides a console interface for scanning and modifying memory
 Load it up via AppInit_DLLs or a proxy. After loading, the DLL itself is straight forward enough.
 
 Currently implemented functionality:
-'s' - Search
-'m' - Monitor
-'c' - Modify
+
+//'s' - Search
+//'m' - Monitor
+//'c' - Modify
 
