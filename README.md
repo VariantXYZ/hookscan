@@ -4,7 +4,9 @@ Load it up via AppInit_DLLs or a proxy. After loading, the DLL itself is straigh
 
 Currently implemented functionality:
 
-//'s' - Search
-//'m' - Monitor
-//'c' - Modify
+'s' - Search
+
+'m' - Monitor
+
+'c' - Modify
 
