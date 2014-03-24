@@ -2,16 +2,27 @@
 #include <Psapi.h>
 #include <cstdio>
 #include <vector>
+
 using namespace std;
 
 //#define LOGGING 
 
 #ifndef LOGGING
-#define LOG(x)
+
+#define LOG(x,...) do { if(setupFlag) printf(x, ##__VA_ARGS__); printf("\n"); } while(false)
+#define LOGn(x,...) do { if(setupFlag) printf(x, ##__VA_ARGS__); } while(false) //Log without newline
+
+#elif LOGGING == 1
+
+FILE *logfile = fopen("log.txt","w");
+#define LOG(x,...) do { if(setupFlag) { printf(x, ##__VA_ARGS__); printf("\n"); fprintf(logfile,x, ##__VA_ARGS__); } fprintf(logfile,"\n"); fflush(logfile); } while(false)
+#define LOGn(x,...) do { if(setupFlag) { printf(x, ##__VA_ARGS__); fprintf(logfile,x, ##__VA_ARGS__); } fflush(logfile); } while(false)
+
 #else
-#include <fstream>
-static ofstream logfile("searchlog.txt",ofstream::out); 
-#define LOG(x) { logfile << hex << x << endl; }
+
+#define LOG(x,...)
+#define LOGn(x,...)
+
 #endif
 
 static volatile bool setupFlag = false;
@@ -26,21 +37,21 @@ void Search()
 	GetSystemInfo(&sysInfo);
 	LPVOID memAddress = NULL;
 	MEMORY_BASIC_INFORMATION memInfo;
-	int s;
-	vector<int*> results, resultsTmp;
+	unsigned int s;
+	vector<unsigned int*> results, resultsTmp;
 	
-	printf("Relative address: %x\n",&s);
-	printf("Type integer to search for (-1 returns, -2 to input number in hex): ");
+	LOG("Relative address of s: 0x%X",&s);
+	LOGn("Type integer to search for (-1 returns, -2 to input number in hex): ");
 	scanf("%d",&s);
 	if(s == -2)
-		scanf("%x",&s);
-	LOG("\nSearching for " + s);		
+		scanf("0x%X",&s);
+	LOG("\nSearching for %u == 0x%X",s,s);
 	while(s != -1)
 	{
 		if(s == -2) //Show results again
 		{
 			for(int i = 0; i < results.size(); i++)
-				printf("%p %d\n",results[i],*results[i]);
+				LOG("%p %u == 0x%X",results[i],*results[i],*results[i]);
 			
 		}
 		else if(!results.size())
@@ -48,13 +59,14 @@ void Search()
 			{
 				if(memInfo.Protect == PAGE_READWRITE || memInfo.Protect == PAGE_READONLY || memInfo.Protect == PAGE_EXECUTE_READ || memInfo.Protect == PAGE_EXECUTE_READWRITE)
 				{
-					for(int* i = (int*)memInfo.BaseAddress; i < (int*)memInfo.BaseAddress + memInfo.RegionSize/sizeof(int); i++	)
+					for(unsigned int* i = (unsigned int*)memInfo.BaseAddress; i < (unsigned int*)memInfo.BaseAddress + memInfo.RegionSize/sizeof(int); i++	)
 						if(*i == s)
 						{
 							if(i == &s) //Ignore variables we store in the DLL itself
 								continue;
-							LOG(reinterpret_cast<void *>(i));
-							printf("%p %d\n",i,*i);
+							if(memInfo.Protect == PAGE_EXECUTE_READ || memInfo.Protect == PAGE_EXECUTE_READWRITE || memInfo.Protect == PAGE_EXECUTE || memInfo.Protect == PAGE_EXECUTE_WRITECOPY)
+								LOGn("(EXECUTABLE)");
+							LOG("%p %u == 0x%X",i,*i,*i);
 							results.push_back(i);
 						}
 				}
@@ -69,13 +81,13 @@ void Search()
 				if(*results[i] == s)
 				{
 					resultsTmp.push_back(results[i]);
-					LOG(reinterpret_cast<void *>(results[i]));
-					printf("%p %d\n",results[i],*results[i]);
+					LOG("%p %u == 0x%X",results[i],*results[i],*results[i]);
 				}
 			results = resultsTmp;	
 		}
-		printf("Type integer to search for within results (-1 returns, -2 to display current values): ");
-		scanf("%d",&s);
+		LOGn("Type integer to search for within results (-1 returns, -2 to display current values): ");
+		scanf("%u",&s);
+		LOG("");
 	}
 	return;
 }
@@ -83,16 +95,16 @@ void Search()
 void Monitor()
 {
 	int* mon;
-	printf("Type in specific address (in hex) to monitor: ");
-	scanf("%x",&mon);
-	
+	LOGn("Type in specific address (in hex) to monitor: ");
+	scanf("0x%X",&mon);
+	LOG("0x%X",mon);
 	char option;
 	do
 	{
-		printf("\n%p:%d",mon,*mon);
-		printf("Again (y or n)? ");
+		LOG("%p: %d == 0x%X",mon,*mon,*mon);
+		LOGn("Again (y or n)? ");
 		scanf("%c",&option);
-		printf("\n");
+		LOG("");
 	} while(option != 'n');
 	
 	return;
@@ -102,15 +114,17 @@ void Monitor()
 void Modify()
 {
 	int* mod;
-	printf("Type in specific address (in hex) to modify: ");
-	scanf("%x",&mod);
+	LOGn("Type in specific address (in hex) to modify: ");
+	scanf("0x%X",&mod);
+	LOG("");
 	
-	printf("\n%p:%d",mod,*mod);
-	printf("Type in new value: ");
+	LOG("%p: %u == 0x%X",mod,*mod,*mod);
+	LOGn("Type in new value: ");
 	scanf("%d",mod);
-	printf("\n");
+	LOG("");
 	
 }
+
 
 DWORD WINAPI initialize(LPVOID param)
 {
@@ -120,9 +134,9 @@ DWORD WINAPI initialize(LPVOID param)
 	char command;	
 	do 
 	{
-		printf("What do? ");
+		LOGn("What do? ");
 		scanf("%c",&command);
-		printf("\n");
+		LOG("");
 		switch(command)
 		{
 			case 's': Search(); break;
